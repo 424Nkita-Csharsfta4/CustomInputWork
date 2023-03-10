@@ -1,11 +1,7 @@
 <template>
   <div class="autocomplete">
     <!-- Текстовое поле с двусторонней привязкой состояния -->
-    <input v-model="state" 
-    placeholder="Ищи" 
-    @input="handleChange"
-     @focus="handleFocus" 
-     @blur="handleBlur" />
+    <input v-model="state" placeholder="Ищи" @focus="handleFocus" @blur="handleBlur" />
     <!---@input="handleChange" - обработчик события изменения значения в текстовом поле, 
         вызывает метод handleChange из скрипта компонента -->
     <!----@focus="handleFocus" - обработчик события фокусировки на текстовом поле, 
@@ -13,10 +9,10 @@
     <!--@blur="handleBlur" - обработчик события потери фокуса текстовым полем,
              вызывает метод handleBlur из скрипта компонента--->
 
-    <Icons @click="handleIconClick"  />
+    <Icons @click="handleIconClick" />
 
     <!-- Шаблон для отображения выпадающего списка -->
-    <ul v-show="showList">
+    <ul v-if="showList">
       <!-- Отображение каждого элемента списка -->
       <li v-for="item in filteredLinks" :key="item.value" @click="handleSelect(item)">
         <!-- Отображение значения элемента списка -->
@@ -31,9 +27,15 @@
 
 <script lang="ts" setup>
 import Icons from './IconsItemView.vue'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
+const emit = defineEmits<{
+  (eventName: "update:modelValue", value: string): void;
+}>();
 
+const props = defineProps<{
+  modelValue: string;
+}>();
 
 // Определение типа элемента списка
 interface LinkItem {
@@ -41,8 +43,15 @@ interface LinkItem {
   link: string
 }
 
-// Создание реактивной переменной для хранения состояния компонента
-const state = ref('')
+/** Создание реактивной переменной для хранения состояния компонента */
+const state = computed({
+  get() {
+    return props.modelValue;
+  },
+  set(value) {
+    emit("update:modelValue", value);
+  }
+})
 
 // Создание реактивной переменной для хранения списка элементов
 const links = ref<LinkItem[]>([])
@@ -51,32 +60,32 @@ const links = ref<LinkItem[]>([])
 const showList = ref(false)
 
 // Создание реактивной переменной для отображения отфильтрованного списка элементов
-const filteredLinks = ref<LinkItem[]>([])
+const filteredLinks = computed(() => links.value.filter(item => item.value.indexOf(state.value)))
 
 // Функция для запроса подсказок
-const querySearch = (queryString: string, cb: (results: LinkItem[]) => void) => {
-  // Фильтрация списка элементов по строке запроса
-  const results = queryString ? links.value.filter(createFilter(queryString)) : links.value
-  // Вызов функции обратного вызова для возврата объектов подсказок
-  cb(results)
-}
+// const querySearch = (queryString: string, cb: (results: LinkItem[]) => void) => {
+//   // Фильтрация списка элементов по строке запроса
+//   const results = queryString ? links.value.filter(createFilter(queryString)) : links.value
+//   // Вызов функции обратного вызова для возврата объектов подсказок
+//   cb(results)
+// }
 
 // Функция для создания фильтра по строке запроса
-const createFilter = (queryString: string) => {
-  const lowerCaseQuery = queryString.toLowerCase()
-  return (link: LinkItem) => {
-    return link.value.toLowerCase().includes(lowerCaseQuery)
-  }
-}
+// const createFilter = (queryString: string) => {
+//   const lowerCaseQuery = queryString.toLowerCase()
+//   return (link: LinkItem) => {
+//     return link.value.toLowerCase().includes(lowerCaseQuery)
+//   }
+// }
 
 // Изменение типа параметра на Event
-const handleChange = (event: Event) => {
-  state.value = (event.target as HTMLInputElement).value
-  querySearch(state.value, (results: LinkItem[]) => {
-    filteredLinks.value = results
-    showList.value = true
-  })
-}
+// const handleChange = (event: Event) => {
+//   state.value = (event.target as HTMLInputElement).value
+//   querySearch(state.value, (results: LinkItem[]) => {
+//     filteredLinks.value = results
+//     showList.value = true
+//   })
+// }
 
 // Изменение типа параметра на
 const handleFocus = (event: FocusEvent) => {
@@ -85,23 +94,23 @@ const handleFocus = (event: FocusEvent) => {
 
 // Изменение типа параметра на Event
 const handleBlur = (event: Event) => {
-  setTimeout(() => {
-    showList.value = false
-  }, 200)
+  // showList.value = false
 }
 
 // Обработчик нажатия на иконку
 const handleIconClick = () => {
-  querySearch(state.value, (results: LinkItem[]) => {
-    filteredLinks.value = results
-    showList.value = true
-  })
+  // querySearch(state.value, (results: LinkItem[]) => {
+  //   filteredLinks.value = results
+  //   showList.value = true
+  // })
+  state.value = "";
 }
 
 // Обработчик выбора элемента из списка
 const handleSelect = (item: LinkItem) => {
+  console.log(item);
   state.value = item.value
-  showList.value = false
+  // showList.value = false
 }
 
 // Вызов функции для получения списка элементов при монтировании компонента
@@ -116,7 +125,7 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="less">
 .autocomplete {
   position: relative;
   display: inline-block;
@@ -150,12 +159,14 @@ ul {
   border-radius: 4px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
+
 .value {
   display: block;
   font-size: 16px;
   font-weight: bold;
   margin-bottom: 5px;
 }
+
 .link {
   display: block;
   font-size: 14px;

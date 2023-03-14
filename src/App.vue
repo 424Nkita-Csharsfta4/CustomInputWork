@@ -3,7 +3,8 @@ import CustomInput from './components/CustomInput.vue';
 </script>
 
 <template>
-<CustomInput/>
+<CustomInput  />
+
 
 </template>
 
